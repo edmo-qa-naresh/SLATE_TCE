@@ -10,6 +10,7 @@ export class MaterialPage {
     readonly recordsLink: Locator;
     readonly materialsLink: Locator;
     readonly newMaterialLink: Locator;
+    readonly recordSearchInput: Locator;
     readonly materialTypeDropdown: Locator;
     readonly materialNameInput: Locator;
     readonly fileInput: Locator;
@@ -18,24 +19,28 @@ export class MaterialPage {
 
     constructor(private readonly page: Page) {
         this.recordsLink = this.page.getByRole('link', { name: 'Records' });
+        this.recordSearchInput = this.page.locator('input#search_quick[name="filter_search_operand"]');
         this.materialsLink = this.page.getByRole('link', { name: 'Materials' });
         this.newMaterialLink = this.page.getByRole('link', { name: 'New Material' });
         this.materialTypeDropdown = this.page.getByRole('row', { name: /Material/i }).getByLabel(/Material/i);
         this.materialNameInput = this.page.locator('input.expanded.maxlength_enabled[name="summary"]');
-        this.fileInput = this.page.locator('input[name="file"][type="file"]');
+        this.fileInput = this.page.locator('input[name="file"][type="file"]:not([disabled])');
         this.uploadButton = this.page.getByRole('button', { name: /upload/i });
         this.saveButton = this.page.getByRole('button', { name: /save/i });
     }
 
     async openRecordByName(recordName: string): Promise<void> {
         await this.recordsLink.click();
+        await this.recordSearchInput.waitFor({ state: 'visible' });
+        await this.recordSearchInput.fill('');
+        await this.recordSearchInput.pressSequentially(recordName);
 
-        const namePattern = new RegExp(recordName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-        const recordLink = this.page.locator('a.menu_link, a[href*="/manage/lookup/"]').filter({ hasText: namePattern }).first();
+        const displayedName = recordName.split(',').pop()?.trim() ?? recordName;
+        const namePattern = new RegExp(displayedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        const recordLink = this.page.locator('td a[href*="/manage/lookup/?id="]').filter({ hasText: namePattern }).first();
 
-        await recordLink.scrollIntoViewIfNeeded();
-        await recordLink.hover({ force: true });
-        await expect(recordLink).toBeVisible({ visible: true });
+        await expect(recordLink).toBeVisible();
+        await recordLink.click();
     }
 
     async openMaterials(): Promise<void> {

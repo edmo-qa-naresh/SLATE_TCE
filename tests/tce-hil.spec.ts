@@ -34,13 +34,13 @@ test('upload approved material and inspect TCE/HIL OCR results', async ({ page }
 
     await materialPage.expectMaterialExists('Applicant Transcript', materialName);
 
-    await page.goto('/manage/reader/');
+    await reader.openReader();
     await reader.openRecord(recordName);
     await reader.initializeTce(transcriptName);
 
     // TODO: Confirm the actual HIL route and OCR result selectors in the test tenant.
     // The test intentionally pauses at inspection; a human verifies extracted fields
     // against the source document and performs any final submission manually.
-    await expect(page.getByText(/transfer credit evaluation/i).first()).toBeVisible();
+    await expect(reader.tceFrame.getByText(/transfer credit evaluation/i).first()).toBeVisible();
     await page.pause();
 });

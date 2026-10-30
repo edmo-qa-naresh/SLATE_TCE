@@ -1,4 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import { config as loadEnv } from 'dotenv';
+
+loadEnv({ path: process.env.PLAYWRIGHT_ENV_FILE ?? '.env.stage' });
 
 const baseURL = process.env.SLATE_BASE_URL ?? 'https://edm.test.technolutions.net';
 
