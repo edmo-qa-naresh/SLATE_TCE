@@ -24,7 +24,7 @@ setup('sign in to Slate interactively and save local session', async ({ page, co
         await page.locator('button[type="submit"], input[type="submit"], button:has-text("Login"), button:has-text("Log in"), button:has-text("Sign in")').first().click();
     }
 
-    console.log('Sign in through Slate/SSO, then resume the test in Playwright Inspector. Do not put credentials in test code.');
+    console.info('[Auth] Sign in through Slate/SSO, then resume the test in Playwright Inspector. Do not put credentials in test code.');
 
     // Explicit human checkpoint handles SSO/MFA and avoids storing credentials.
 

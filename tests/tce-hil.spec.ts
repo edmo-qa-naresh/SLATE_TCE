@@ -1,6 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import { MaterialPage } from '../src/pages/materialpage';
 import { SlateReaderPage } from '../src/pages/slate-reader.page';
+import { saveOcrProcessId } from '../src/utils/ocr-process-env';
 
 test.use({ storageState: '.auth/slate.json' });
 
@@ -14,33 +15,35 @@ test('upload approved material and inspect TCE/HIL OCR results', async ({ page }
     const materialType = process.env.SLATE_MATERIAL_TYPE ?? 'applicant_transcript';
     const uniqueSuffix = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14);
     const materialName = process.env.SLATE_MATERIAL_NAME ?? `TCE_${uniqueSuffix}`;
-    const transcriptName = process.env.SLATE_TRANSCRIPT_NAME ?? materialName;
+    const transcriptName = materialName;
 
-    test.skip(!materialPath, 'Set SLATE_MATERIAL_PATH to an approved test-material file.');
+    if (!materialPath) {
+        throw new Error('Set SLATE_MATERIAL_PATH to an approved test-material file before running the TCE flow.');
+    }
 
     const reader = new SlateReaderPage(page);
     const materialPage = new MaterialPage(page);
 
-    await page.goto('/manage/records/');
-    await materialPage.openRecordByName(recordName);
-
-    await materialPage.openMaterials();
-    await materialPage.openNewMaterial();
-    await materialPage.createMaterial({
-        materialType,
-        materialName,
-        filePath: materialPath!,
+    await test.step('Upload the configured material', async () => {
+        console.info('[TCE/HIL] Opening Slate and locating the configured record.');
+        await page.goto('/manage/');
+        await materialPage.openRecordByName(recordName);
+        await materialPage.openMaterials();
+        await materialPage.openNewMaterial();
+        await materialPage.createMaterial({
+            materialType,
+            materialName,
+            filePath: materialPath,
+        });
+        await materialPage.expectMaterialExists('Applicant Transcript', materialName);
     });
 
-    await materialPage.expectMaterialExists('Applicant Transcript', materialName);
-
-    await reader.openReader();
-    await reader.openRecord(recordName);
-    await reader.initializeTce(transcriptName);
-
-    // TODO: Confirm the actual HIL route and OCR result selectors in the test tenant.
-    // The test intentionally pauses at inspection; a human verifies extracted fields
-    // against the source document and performs any final submission manually.
-    await expect(reader.tceFrame.getByText(/transfer credit evaluation/i).first()).toBeVisible();
-    await page.pause();
+    await test.step('Initialize TCE for the uploaded material', async () => {
+        await reader.openReader();
+        await reader.openRecord(recordName);
+        console.info('[TCE/HIL] Selecting the newly uploaded transcript.');
+        const processId = await reader.initializeTce(transcriptName);
+        await saveOcrProcessId(processId, transcriptName);
+        console.info('[TCE/HIL] Saved the process and transcript handoff to .env.stage.');
+    });
 });

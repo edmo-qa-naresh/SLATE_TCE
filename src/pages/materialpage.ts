@@ -30,6 +30,7 @@ export class MaterialPage {
     }
 
     async openRecordByName(recordName: string): Promise<void> {
+        console.info('[Slate] Searching Records for the configured record.');
         await this.recordsLink.click();
         await this.recordSearchInput.waitFor({ state: 'visible' });
         await this.recordSearchInput.fill('');
@@ -41,16 +42,19 @@ export class MaterialPage {
 
         await expect(recordLink).toBeVisible();
         await recordLink.click();
+        console.info('[Slate] Opened the configured record.');
     }
 
     async openMaterials(): Promise<void> {
+        console.info('[Slate] Opening record Materials.');
         await this.materialsLink.click();
-        await expect(this.materialsLink).toBeVisible();
+        await expect(this.newMaterialLink).toBeVisible();
     }
 
     async openNewMaterial(): Promise<void> {
+        console.info('[Slate] Opening the New Material form.');
         await this.newMaterialLink.click();
-        await expect(this.page.getByRole('link', { name: 'New Material' })).toBeVisible();
+        await expect(this.materialTypeDropdown).toBeVisible();
     }
 
     async selectMaterialType(materialType: string): Promise<void> {
@@ -75,11 +79,13 @@ export class MaterialPage {
     }
 
     async createMaterial(options: MaterialUploadOptions): Promise<void> {
+        console.info(`[Slate] Creating configured material (${options.materialType}).`);
         await this.selectMaterialType(options.materialType);
         await this.setUniqueMaterialName(options.materialName);
         await this.uploadFile(options.filePath);
         await this.submitUpload();
         await this.saveMaterial();
+        console.info('[Slate] Submitted material for upload.');
     }
 
     async expectMaterialExists(materialType: string, materialName: string): Promise<void> {
